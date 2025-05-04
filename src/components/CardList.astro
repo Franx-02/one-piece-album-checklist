@@ -1,0 +1,42 @@
+---
+let cards = [];
+try {
+    const res = await fetch('https://apitcg.com/api/one-piece/cards?name=luffy');
+    const json = await res.json();
+    cards = json.data || [];
+} catch (err) {
+    console.error('Error fetching cards', err);
+}
+---
+
+<div id="card-list" class="grid grid-cols-2 gap-4">
+    {
+        cards.map((card) => (
+            <div class="border p-2" data-card-id={card.id}>
+                <img src={card.images.small} alt={card.name} />
+                <h2>{card.name}</h2>
+                <p>{card.rarity}</p>
+                <button class="toggle-btn">❌ Faltante</button>
+            </div>
+        ))
+    }
+</div>
+
+<script type="module">
+    const collected = JSON.parse(localStorage.getItem('collected') || '{}');
+
+    document.querySelectorAll('#card-list .toggle-btn').forEach((btn) => {
+        const cardDiv = btn.closest('[data-card-id]');
+        const cardId = cardDiv.dataset.cardId;
+
+        if (collected[cardId]) {
+            btn.textContent = '✅ Coleccionada';
+        }
+
+        btn.addEventListener('click', () => {
+            collected[cardId] = !collected[cardId];
+            localStorage.setItem('collected', JSON.stringify(collected));
+            btn.textContent = collected[cardId] ? '✅ Coleccionada' : '❌ Faltante';
+        });
+    });
+</script>
