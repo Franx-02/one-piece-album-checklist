@@ -1,0 +1,113 @@
+---
+const collections = [
+    { path: 'op01-romance-dawn', code: 'OP01', name: 'Romance Dawn' },
+    { path: 'op02-paramount-war', code: 'OP02', name: 'Paramount War' },
+    { path: 'op03-pillars-of-strength', code: 'OP03', name: 'Pillars of Strength' },
+    { path: 'op04-kingdoms-of-intrigue', code: 'OP04', name: 'Kingdoms of Intrigue' },
+    { path: 'op05-awakening-of-the-new-era', code: 'OP05', name: 'Awakening of the New Era' },
+    { path: 'op06-wings-of-the-captain', code: 'OP06', name: 'Wings of the Captain' },
+    { path: 'op07-500-years-in-the-future', code: 'OP07', name: '500 Years in the Future' },
+    { path: 'op08-two-legends', code: 'OP08', name: 'Two Legends' },
+    { path: 'op09-emperors-in-the-new-world', code: 'OP09', name: 'Emperors in the New World' },
+    { path: 'op10-royal-blood', code: 'OP10', name: 'Royal Blood' },
+    { path: 'eb01-memorial-collection', code: 'EB01', name: 'Memorial Collection' },
+    { path: 'eb02-anime-25th-collection', code: 'EB02', name: 'Anime 25th Collection' }
+];
+---
+
+<div class="flex flex-col items-center justify-center min-h-screen">
+    <select id="collection-select" class="px-3 py-2 rounded bg-white text-black mb-8">
+        <option value="">Selecciona una colección</option>
+        {
+            collections.map((col) => (
+                <option value={col.code}>
+                    {col.name} ({col.code})
+                </option>
+            ))
+        }
+    </select>
+    <div id="cards-list" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 justify-center"></div>
+</div>
+
+<script is:inline>
+    // KEY para localStorage
+    const STORAGE_KEY = 'op-card-selection-v1';
+
+    // Recupera el set de seleccionados del almacenamiento
+    function loadSelection() {
+        try {
+            const data = localStorage.getItem(STORAGE_KEY);
+            return data ? new Set(JSON.parse(data)) : new Set();
+        } catch {
+            return new Set();
+        }
+    }
+    // Guarda el set de seleccionados en localStorage
+    function saveSelection(set) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(set)));
+    }
+
+    // Set con los códigos seleccionados
+    let selectedCards = loadSelection();
+
+    document.getElementById('collection-select').addEventListener('change', async function (e) {
+        const code = e.target.value;
+        const $list = document.getElementById('cards-list');
+        $list.innerHTML = '';
+
+        if (!code) return;
+
+        $list.innerHTML = 'Cargando...';
+        try {
+            const res = await fetch(`/api/cards?collection=${code}`);
+            const cards = await res.json();
+            if (Array.isArray(cards) && cards.length > 0) {
+                $list.innerHTML = cards
+                    .map((card) => {
+                        // Cartas seleccionadas empiezan a color y con borde
+                        const isSelected = selectedCards.has(card.code);
+                        return `
+                        <img 
+                            src="https://ijlsmjmiuvnnlmaedeao.supabase.co/storage/v1/object/public/one-piece-cards/${card.img_url}" 
+                            alt="${card.code}"
+                            title="${card.name || card.code}" 
+                            data-code="${card.code}" 
+                            class="w-48 h-72 object-cover inline-block m-2 shadow rounded cursor-pointer transition-all duration-200
+                                ${isSelected ? 'ring-4 ring-green-400' : 'grayscale'}
+                                hover:scale-125 hover:z-10 hover:grayscale-0 hover:ring-2 hover:ring-blue-400"
+                        />`;
+                    })
+                    .join('');
+            } else {
+                $list.innerHTML = `<div class="mt-4">No hay cartas en esta colección.</div>`;
+            }
+        } catch (err) {
+            $list.innerHTML = `<div class="text-red-600 mt-4">Error cargando cartas.</div>`;
+        }
+    });
+
+    // Evento para seleccionar/deseleccionar cartas
+    document.getElementById('cards-list').addEventListener('click', function (e) {
+        if (e.target.tagName === 'IMG' && e.target.dataset.code) {
+            const img = e.target;
+            const code = img.dataset.code;
+            if (selectedCards.has(code)) {
+                // Deseleccionar
+                selectedCards.delete(code);
+                img.classList.add('grayscale');
+                img.classList.remove('ring-4', 'ring-green-400');
+            } else {
+                // Seleccionar
+                selectedCards.add(code);
+                img.classList.remove('grayscale');
+                img.classList.add('ring-4', 'ring-green-400');
+            }
+            // Guardar cambios en localStorage
+            saveSelection(selectedCards);
+        }
+    });
+
+    // Si quieres que al cambiar de colección, las seleccionadas se pinten sin recargar,
+    // puedes "disparar" el cambio al abrir la página (opcional):
+    document.getElementById('collection-select').dispatchEvent(new Event('change'));
+</script>

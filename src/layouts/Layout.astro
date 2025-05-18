@@ -2,7 +2,6 @@
 import '../../src/styles/globals.css';
 import '@fontsource-variable/inter/wght.css';
 import interWoff2 from '@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url';
-import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 
 interface Props {
@@ -23,10 +22,13 @@ const { title } = Astro.props;
         <link rel="preload" as="font" type="font/woff2" href={interWoff2} crossorigin />
     </head>
     <body class="antialiased text-white bg-complementary">
-        <div class="flex flex-col min-h-screen px-6 bg-noise sm:px-12">
-            <div class="flex flex-col w-full max-w-5xl mx-auto grow">
-                <Header />
-                <main class="grow"><slot /></main>
+        <div class="flex flex-col min-h-screen bg-noise">
+            <!-- Sin px-6 ni sm:px-12 -->
+            <div class="flex flex-col w-full mx-auto grow">
+                <main class="grow flex flex-col items-center justify-center">
+                    <!-- <-- centra slot -->
+                    <slot />
+                </main>
                 <Footer />
             </div>
         </div>
